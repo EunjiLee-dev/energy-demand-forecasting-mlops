@@ -20,8 +20,21 @@ def build_dataset():
 
     df = df.sort_values("datetime")
 
-    print(df.head())
-    print(df.isnull().sum())
+    # add time features
+    df["hour"] = df["datetime"].dt.hour
+    df["dayofweek"] = df["datetime"].dt.dayofweek
+    df["month"] = df["datetime"].dt.month
+
+    # add lag features
+    df["lag_1"] = df["demand"].shift(1)
+    df["lag_24"] = df["demand"].shift(24)
+    df["lag_168"] = df["demand"].shift(168)  # weekly pattern
+
+    # add rolling features
+    df["rolling_mean_24"] = df["demand"].rolling(24).mean()
+    df["rolling_std_24"] = df["demand"].rolling(24).std()
+
+    df = df.dropna()
 
     output_path = "data/processed/final_dataset.csv"
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
