@@ -4,9 +4,20 @@ from lightgbm import LGBMRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 import joblib
 import os
+import mlflow
+import mlflow.sklearn
+
+# config
+params = {
+    "n_estimators": 500,
+    "learning_rate": 0.05,
+    "num_leaves": 31,
+    "random_state": 42
+}
+DATA_PATH = "data/processed/final_dataset.csv"
 
 
-def load_data(path="data/processed/final_dataset.csv"):
+def load_data(path=DATA_PATH):
     df = pd.read_csv(path)
     df["datetime"] = pd.to_datetime(df["datetime"])
     df = df.sort_values("datetime")
@@ -32,11 +43,7 @@ def train_model(train_df, features):
     X_train = train_df[features]
     y_train = train_df["demand"]
 
-    model = LGBMRegressor(
-        n_estimators=500,
-        learning_rate=0.05,
-        num_leaves=31
-    )
+    model = LGBMRegressor(**params)
 
     model.fit(X_train, y_train)
 
@@ -52,10 +59,7 @@ def evaluate(model, test_df, features):
     mae = mean_absolute_error(y_test, preds)
     rmse = np.sqrt(mean_squared_error(y_test, preds))
 
-    print(f"MAE: {mae:.2f}")
-    print(f"RMSE: {rmse:.2f}")
-
-    return preds
+    return preds, mae, rmse
 
 
 def save_model(model, path="models/lgbm_model.pkl"):
@@ -72,9 +76,25 @@ def main():
     features = get_features(df)
     print(f"features: {features}")
 
-    model = train_model(train_df, features)
+    # MLflow
+    mlflow.set_experiment("energy-demand-forecasting")
+    
+    with mlflow.start_run(run_name="lgbm_baseline"):
+        model = train_model(train_df, features)
 
-    evaluate(model, test_df, features)
+        preds, mae, rmse = evaluate(model, test_df, features)
+
+        print(f"MAE: {mae:.2f}")
+        print(f"RMSE: {rmse:.2f}")
+
+        mlflow.log_metric("mae", mae)
+        mlflow.log_metric("rmse", rmse)
+        mlflow.log_params(params)
+        mlflow.log_param("num_features", len(features))
+        mlflow.log_param("features", ",".join(features))
+
+        mlflow.sklearn.log_model(model, "model")
+        print("MLflow logging complete")
 
     save_model(model)
 
