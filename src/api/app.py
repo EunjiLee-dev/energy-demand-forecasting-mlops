@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 import joblib
 import pandas as pd
+from src.config import FEATURES
 
 
 app = FastAPI()
@@ -15,8 +16,7 @@ def home():
 @app.post("/predict")
 def predict(data: dict):
     df = pd.DataFrame([data])
+    df = df[FEATURES]
     pred = model.predict(df)[0]
 
-    return {
-        "prediction": float(pred)
-    }
+    return {"prediction": float(pred)}

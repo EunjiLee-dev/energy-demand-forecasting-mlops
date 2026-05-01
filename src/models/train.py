@@ -6,15 +6,7 @@ import joblib
 import os
 import mlflow
 import mlflow.sklearn
-
-# config
-params = {
-    "n_estimators": 500,
-    "learning_rate": 0.05,
-    "num_leaves": 31,
-    "random_state": 42
-}
-DATA_PATH = "data/processed/final_dataset.csv"
+from src.config import FEATURES, MODEL_PARAMS, DATA_PATH
 
 
 def load_data(path=DATA_PATH):
@@ -34,16 +26,14 @@ def train_test_split(df, split_ratio=0.8):
 
 
 def get_features(df):
-    drop_cols = ["datetime", "demand"]
-    features = [col for col in df.columns if col not in drop_cols]
-    return features
+    return FEATURES
 
 
 def train_model(train_df, features):
     X_train = train_df[features]
     y_train = train_df["demand"]
 
-    model = LGBMRegressor(**params)
+    model = LGBMRegressor(**MODEL_PARAMS)
 
     model.fit(X_train, y_train)
 
@@ -89,7 +79,7 @@ def main():
 
         mlflow.log_metric("mae", mae)
         mlflow.log_metric("rmse", rmse)
-        mlflow.log_params(params)
+        mlflow.log_params(MODEL_PARAMS)
         mlflow.log_param("num_features", len(features))
         mlflow.log_param("features", ",".join(features))
 
