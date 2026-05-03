@@ -2,15 +2,17 @@ from fastapi import FastAPI
 import joblib
 import pandas as pd
 from src.config import FEATURES
+import os
 
 
+MODEL_PATH = os.path.abspath("models/lgbm_model.pkl")
 app = FastAPI()
 model = None
 
 def get_model():
     global model
     if model is None:
-        model = joblib.load("models/lgbm_model.pkl")
+        model = joblib.load(MODEL_PATH)
     return model
 
 # health check
