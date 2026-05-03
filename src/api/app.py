@@ -5,8 +5,12 @@ from src.config import FEATURES
 
 
 app = FastAPI()
+model = None
 
-model = joblib.load("models/lgbm_model.pkl")
+@app.on_event("startup")
+def load_model():
+    global model
+    model = joblib.load("models/lgbm_model.pkl")
 
 # health check
 @app.get("/")
