@@ -7,10 +7,11 @@ from src.config import FEATURES
 app = FastAPI()
 model = None
 
-@app.on_event("startup")
-def load_model():
+def get_model():
     global model
-    model = joblib.load("models/lgbm_model.pkl")
+    if model is None:
+        model = joblib.load("models/lgbm_model.pkl")
+    return model
 
 # health check
 @app.get("/")
@@ -19,6 +20,7 @@ def home():
 
 @app.post("/predict")
 def predict(data: dict):
+    model = get_model()
     df = pd.DataFrame([data])
     df = df[FEATURES]
     pred = model.predict(df)[0]
